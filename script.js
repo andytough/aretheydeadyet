@@ -48,7 +48,7 @@ function fetchDetails(personId) {
                 const isDeceased = personInfo.dateOfDeath; 
                 const formattedDOD = isDeceased ? formatDate(personInfo.dateOfDeath.value) : 'N/A';
                 const statusClass = isDeceased ? 'dead' : 'alive';
-                const imgSrc = isDeceased ? 'img/dodo.png' : 'img/turtle.png';
+                const imgSrc = isDeceased ? '/img/dodo.png' : '/img/turtle.png';
                 const imgId = isDeceased ? 'dodo' : 'turtle';
                 const imgAlt = isDeceased ? 'picture of a dodo' : 'picture of a turtle';
                 const status  = isDeceased ? 'DEAD' : 'ALIVE';
