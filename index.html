@@ -1,9 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Are they dead yet?</title>
+    <title>Are they dead yet?</title>
+    <style>
+        #suggestions {
+            display: none;
+            position: absolute;
+            border: 1px solid #ddd;
+            z-index: 100;
+        }
+        #suggestions option {
+            padding: 8px;
+            margin: 0;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-<h1>Are they dead yet?</h1>
+    <h1>Are they dead yet?</h1>
+    <input type="text" id="search-box" placeholder="Enter a name...">
+    <select id="suggestions" size="5"></select>
+    <button id="search-button">Search</button>
+    <div id="person-info"></div>
+
+    <script src="script.js"></script>
 </body>
 </html>
