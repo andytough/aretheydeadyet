@@ -89,7 +89,7 @@ function autocompleteSearch() {
 }
 
 
-function handleAutocompleteResponse(response) {
+/*function handleAutocompleteResponse(response) {
     let suggestionsHTML = '';
     response.search.forEach(item => {
         // Concatenate the label and description, separated by " - "
@@ -104,7 +104,30 @@ function handleAutocompleteResponse(response) {
     suggestionsElement.size = response.search.length > 0 ? response.search.length : 1;
     suggestionsElement.style.display = 'block';
 }
+*/
+function handleAutocompleteResponse(response) {
+    let suggestionsHTML = '';
+    response.search.forEach(item => {
+        let displayText = item.label;
+        if (item.description) {
+            displayText += ` - ${item.description}`;
+        }
+        // Create a clickable element for each suggestion
+        suggestionsHTML += `<div class="suggestion-item" data-value="${item.id}">${displayText}</div>`;
+    });
 
+    const suggestionsContainer = document.getElementById('suggestions-container');
+    suggestionsContainer.innerHTML = suggestionsHTML;
+
+    // Add click event listeners to each suggestion item
+    document.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const personId = this.getAttribute('data-value');
+            fetchDetails(personId);
+            suggestionsContainer.innerHTML = ''; // Clear suggestions
+        });
+    });
+}
 
 
 document.getElementById('search-box').addEventListener('input', autocompleteSearch);

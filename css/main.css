@@ -31,3 +31,18 @@ button {
     text-align: left;
     display: inline-block;
 }
+
+#suggestions-container {
+    /* Add styles for the container */
+}
+
+.suggestion-item {
+    /* Add styles for each suggestion item */
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+}
