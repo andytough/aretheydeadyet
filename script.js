@@ -48,13 +48,13 @@ function fetchDetails(personId) {
                 const isDeceased = personInfo.dateOfDeath; 
                 const formattedDOD = isDeceased ? formatDate(personInfo.dateOfDeath.value) : 'N/A';
                 const statusClass = isDeceased ? 'dead' : 'alive';
-                const imgSrc = isDeceased ? '/img/dodo.png' : '/img/turtle.png';
-                const imgId = isDeceased ? 'dodo' : 'turtle';
-                const imgAlt = isDeceased ? 'picture of a dodo' : 'picture of a turtle';
+                const imgSrc = isDeceased ? '/img/dead.png' : '/img/alive.png';
+                const imgId = isDeceased ? 'dead' : 'alive';
+                const imgAlt = isDeceased ? 'picture representing death' : 'picture representing life';
                 const status  = isDeceased ? 'DEAD' : 'ALIVE';
                 
                 const htmlContent = `
-                    <div class="${statusClass}">
+                    <div id="status" class="${statusClass}">
                         <!--<p><strong>Name:</strong> <a href="${wikidataUrl}" target="_blank">${personLabel}</a></p>
                         <p><strong>Date of Birth:</strong> ${formattedDOB}</p>
                         <p><strong>Date of Death:</strong> ${formattedDOD}</p>
@@ -120,3 +120,42 @@ document.getElementById('suggestions').addEventListener('change', function() {
     this.style.display = 'none';
 });
 
+// additional
+
+document.addEventListener('DOMContentLoaded', function() {
+    var personInfo = document.getElementById('person-info');
+    var childDivs = personInfo.getElementsByTagName('div');
+
+    // Check each child div for a class
+    for (var i = 0; i < childDivs.length; i++) {
+        if (childDivs[i].className) {
+            // If a child div with a class is found, remove 'atdy' class from the other div
+            var atdyDiv = document.querySelector('.atdy');
+            if (atdyDiv) {
+                atdyDiv.classList.remove('atdy');
+                break; // Exit the loop as the class is already removed
+            }
+        }
+    }
+});
+
+// more
+
+var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList') {
+            var personInfo = document.getElementById('person-info');
+            if (personInfo.querySelector('div[class]')) {
+                var atdyDiv = document.querySelector('.atdy');
+                if (atdyDiv) {
+                    atdyDiv.classList.remove('atdy');
+                }
+            }
+        }
+    });
+});
+
+var targetNode = document.getElementById('person-info');
+var config = { childList: true };
+
+observer.observe(targetNode, config);
