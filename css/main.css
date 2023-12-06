@@ -20,7 +20,7 @@ button {
 }*/
 
 #search-box {
-    width: 75%;
+    width: 100%;
 }
 
 #results {
@@ -51,4 +51,8 @@ button {
     -moz-box-sizing: border-box;
     box-sizing: border-box;
     width:100%
+}
+
+img {
+    width: 100%;
 }
