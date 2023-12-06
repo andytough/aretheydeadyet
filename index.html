@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html>
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="css/main.css">
+
 <head>
     <title>Are they dead yet?</title>
     <style>
-        #suggestions {
+        /*#suggestions {
             display: none;
             position: absolute;
             border: 1px solid #ddd;
@@ -14,16 +19,22 @@
             margin: 0;
             border-bottom: 1px solid #ddd;
             cursor: pointer;
-        }
+        }*/
     </style>
 </head>
-<body>
-    <h1><!--Are they dead yet-->?</h1>
-    <input type="text" id="search-box" placeholder="Enter a name...">
-    <div id="suggestions" size="5"></div>
-    <button id="search-button">Search</button>
-    <div id="person-info"></div>
 
-    <script src="script.js"></script>
+<body>
+    <div class="container">
+      <div class="row">
+        <div class="twelve column">
+            <h1>ATDY?</h1>
+                <input class="fill" type="text" id="search-box" placeholder="Enter a name...">
+                    <div id="suggestions" size="5"></div>
+                        <!--<button id="search-button">Search</button>-->
+                    <div id="person-info"></div>
+            </div>
+        </div>
+    </div>
+<script src="script.js"></script>
 </body>
 </html>
