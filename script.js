@@ -92,20 +92,26 @@ function autocompleteSearch() {
 function handleAutocompleteResponse(response) {
     let suggestionsHTML = '';
     response.search.forEach(item => {
-        // Concatenate the label and description, separated by " - "
         let displayText = item.label;
         if (item.description) {
             displayText += ` - ${item.description}`;
         }
-        suggestionsHTML += `<option value="${item.id}">${displayText}</option>`;
+        suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
     });
+
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = suggestionsHTML;
-    suggestionsElement.size = response.search.length > 0 ? response.search.length : 1;
     suggestionsElement.style.display = 'block';
+
+    // Add click event listeners for each suggestion
+    document.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const personId = this.getAttribute('data-id');
+            fetchDetails(personId);
+            suggestionsElement.style.display = 'none';
+        });
+    });
 }
-
-
 
 document.getElementById('search-box').addEventListener('input', autocompleteSearch);
 document.getElementById('suggestions').addEventListener('change', function() {
@@ -113,3 +119,4 @@ document.getElementById('suggestions').addEventListener('change', function() {
     fetchDetails(personId);
     this.style.display = 'none';
 });
+

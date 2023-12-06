@@ -31,3 +31,20 @@ button {
     text-align: left;
     display: inline-block;
 }
+
+/*amended code to deal with iOS Safari select display*/
+#suggestions {
+    display: none;
+    position: absolute;
+    border: 1px solid #ddd;
+    z-index: 100;
+    background-color: white;
+    width: 100%;  /* amend as required */
+}
+
+.suggestion-item {
+    padding: 8px;
+    margin: 0;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
