@@ -4,7 +4,15 @@
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/skeleton.css">
   <link rel="stylesheet" href="css/main.css">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+  if(navigator.userAgent.indexOf('iPhone') > -1 )
+{
+    document
+      .querySelector("[name=viewport]")
+      .setAttribute("content","width=device-width, initial-scale=1, maximum-scale=1");
+}
+  </script>
 <head>
     <title>Are they dead yet?</title>
     <style>
