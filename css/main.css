@@ -65,3 +65,8 @@ img {
   background-size: cover;
   min-height: 100vh;  
 }
+
+.home a {
+  color: black;
+  text-decoration: none;
+}
