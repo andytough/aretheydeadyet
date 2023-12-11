@@ -11,11 +11,13 @@ function getLabelQuery(personId) {
 
 function getSparqlQuery(personId) {
     return `
-    SELECT ?dateOfBirth ?dateOfDeath 
+    SELECT ?dateOfBirth ?dateOfDeath ?genderLabel 
            (YEAR(?dateOfDeath) - YEAR(?dateOfBirth) AS ?ageAtDeath)
     WHERE {
       wd:${personId} wdt:P569 ?dateOfBirth;
-                    OPTIONAL { wd:${personId} wdt:P570 ?dateOfDeath. }
+                      OPTIONAL { wd:${personId} wdt:P570 ?dateOfDeath. }
+                      OPTIONAL { wd:${personId} wdt:P21 ?gender. }
+                      SERVICE wikibase:label { bd:serviceParam wikibase:language "en". ?gender rdfs:label ?genderLabel }
     }`;
 }
 
@@ -38,33 +40,58 @@ function fetchDetails(personId) {
             const personLabel = data.results.bindings[0].personLabel.value;
             const detailsQuery = getSparqlQuery(personId);
             const detailsUrl = endpoint + "?query=" + encodeURIComponent(detailsQuery) + "&format=json";
-            const wikidataUrl = `https://www.wikidata.org/wiki/${personId}`;
 
             fetch(detailsUrl)
             .then(response => response.json())
             .then(data => {
-                const personInfo = data.results.bindings[0];
-                const formattedDOB = formatDate(personInfo.dateOfBirth.value);
-                const isDeceased = personInfo.dateOfDeath; 
-                const formattedDOD = isDeceased ? formatDate(personInfo.dateOfDeath.value) : 'N/A';
-                const statusClass = isDeceased ? 'dead' : 'alive';
-                const imgSrc = isDeceased ? '/img/dead.png' : '/img/alive.png';
-                const imgId = isDeceased ? 'dead' : 'alive';
-                const imgAlt = isDeceased ? 'picture representing death' : 'picture representing life';
-                const status  = isDeceased ? 'DEAD' : 'ALIVE';
-                
-                const htmlContent = `
-                    <div id="status" class="${statusClass}">
-                        <!--<p><strong>Name:</strong> <a href="${wikidataUrl}" target="_blank">${personLabel}</a></p>
-                        <p><strong>Date of Birth:</strong> ${formattedDOB}</p>
-                        <p><strong>Date of Death:</strong> ${formattedDOD}</p>
-                        <p><strong>Age at Death:</strong> ${personInfo.ageAtDeath ? personInfo.ageAtDeath.value : 'N/A'}</p>-->
-                        <p><a href="${wikidataUrl}" target="_blank">${personLabel}</a> is ${status}</p>
-                        <img id="${imgId}" class="${statusClass}" alt="${imgAlt}" src="${imgSrc}">
-                    </div>
-                `;
+                if (data.results.bindings.length > 0) {
+                    const personInfo = data.results.bindings[0];
+                    const formattedDOB = personInfo.dateOfBirth ? formatDate(personInfo.dateOfBirth.value) : 'Unknown';
+                    const isDeceased = personInfo.dateOfDeath ? true : false;
+                    const formattedDOD = isDeceased ? formatDate(personInfo.dateOfDeath.value) : 'N/A';
+                    const gender = personInfo.genderLabel ? personInfo.genderLabel.value.toLowerCase() : 'unknown';
+                     let imgSrc;
+                    if (isDeceased) {
+                        imgSrc = '/img/dead.png';
+                    } else {
+                        switch(gender) {
+                            case 'male':
+                                imgSrc = '/img/alive-male.png';
+                                break;
+                            case 'female':
+                                imgSrc = '/img/alive-female.png';
+                                break;
+                            default:
+                                // Randomly select between 'alive-rand-01.png' and 'alive-rand-02.png'
+                                imgSrc = Math.random() < 0.5 ? '/img/alive-rand-01.png' : '/img/alive-rand-02.png';
+                                break;
+                        }
+                    }
 
-                document.getElementById('person-info').innerHTML = htmlContent;
+
+                    const statusClass = isDeceased ? 'dead' : 'alive';
+                    const imgId = isDeceased ? 'dead' : 'alive';
+                    const imgAlt = isDeceased ? 'picture representing death' : 'picture representing life';
+                    const status  = isDeceased ? 'DEAD' : 'ALIVE';
+
+                    const htmlContent = `
+                        <div id="status" class="${statusClass}">
+                            <p><a href="https://www.wikidata.org/wiki/${personId}" target="_blank">${personLabel}</a> is ${status}</p>
+                            <!--<p><strong>Date of Birth:</strong> ${formattedDOB}</p>
+                            <p><strong>Date of Death:</strong> ${formattedDOD}</p>
+                            <p><strong>Gender:</strong> ${gender}</p>-->
+                            <img id="${imgId}" class="${statusClass}" alt="${imgAlt}" src="${imgSrc}">
+                        </div>
+                    `;
+
+                    document.getElementById('person-info').innerHTML = htmlContent;
+                } else {
+                    document.getElementById('person-info').innerHTML = "<p>No details found.</p>";
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching details:', error);
+                document.getElementById('person-info').innerHTML = "<p>Error fetching details.</p>";
             });
         } else {
             document.getElementById('person-info').innerHTML = "<p>English label not found.</p>";
@@ -72,6 +99,7 @@ function fetchDetails(personId) {
     })
     .catch(error => {
         console.error('Error fetching label:', error);
+        document.getElementById('person-info').innerHTML = "<p>Error fetching label.</p>";
     });
 }
 

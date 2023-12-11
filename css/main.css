@@ -60,13 +60,22 @@ img {
 }
 
 .atdy {
-  background-image: url('../grim-reaper.png');
+  margin-top: 100px;
+  background-image: url('/img/grim-reaper.png');
   background-repeat: no-repeat;
   background-size: cover;
   min-height: 100vh;  
 }
 
+body {
+background-color:black;
+}
+
+body p {
+color: white;
+}
+
 .home a {
-  color: black;
+  color: white;
   text-decoration: none;
 }
