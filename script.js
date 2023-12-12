@@ -74,17 +74,45 @@ function fetchDetails(personId) {
                     const imgAlt = isDeceased ? 'picture representing death' : 'picture representing life';
                     const status  = isDeceased ? 'DEAD' : 'ALIVE';
 
-                    const htmlContent = `
+                    const specialPersonIds = [ // Add special person IDs here
+                    'Q1740276'/*Geordie Walker*/, 
+                    'Q1361323'/*Jazz Coleman*/
+                    ]; 
+
+                    let htmlContent = `
                         <div id="status" class="${statusClass}">
                             <p><a href="https://www.wikidata.org/wiki/${personId}" target="_blank">${personLabel}</a> is ${status}</p>
                             <!--<p><strong>Date of Birth:</strong> ${formattedDOB}</p>
                             <p><strong>Date of Death:</strong> ${formattedDOD}</p>
                             <p><strong>Gender:</strong> ${gender}</p>-->
+                            <!-- Additional content will be inserted here -->
                             <img id="${imgId}" class="${statusClass}" alt="${imgAlt}" src="${imgSrc}">
                         </div>
                     `;
 
-                    document.getElementById('person-info').innerHTML = htmlContent;
+                    // Check if the personId is in the special list
+if (specialPersonIds.includes(personId)) {
+    const additionalContentUrl = `people/${personId}.html`; // Path to your HTML files
+
+    // Fetch the additional HTML content
+    fetch(additionalContentUrl)
+        .then(response => response.text())
+        .then(additionalContent => {
+            // Insert the additional content after the specific paragraph and before the image
+            htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
+
+            document.getElementById('person-info').innerHTML = htmlContent;
+        })
+        .catch(error => {
+            console.error('Error fetching additional content:', error);
+            // If there's an error, still display the original content
+            document.getElementById('person-info').innerHTML = htmlContent;
+        });
+} else {
+    // If not in the special list, just display the original content
+    document.getElementById('person-info').innerHTML = htmlContent;
+}
+
                 } else {
                     document.getElementById('person-info').innerHTML = "<p>No details found.</p>";
                 }
