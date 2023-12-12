@@ -1,0 +1,13 @@
+body {
+color: black;
+background-color:white;
+}
+
+body p {
+color: black;
+}
+
+.home a {
+  color: black;
+  text-decoration: none;
+}

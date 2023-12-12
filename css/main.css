@@ -21,6 +21,7 @@ button {
 
 #search-box {
     width: 100%;
+    color: black;
 }
 
 #results {
@@ -38,6 +39,7 @@ button {
     background-color: white;
     min-width: 100%;  /* amend as required */
     max-width: 100%;
+    color: black;
 }
 
 .suggestion-item {

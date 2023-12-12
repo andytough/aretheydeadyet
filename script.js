@@ -68,6 +68,7 @@ function fetchDetails(personId) {
                         }
                     }
 
+    addCssLink(isDeceased);
 
                     const statusClass = isDeceased ? 'dead' : 'alive';
                     const imgId = isDeceased ? 'dead' : 'alive';
@@ -131,6 +132,26 @@ if (specialPersonIds.includes(personId)) {
     });
 }
 
+function addCssLink(isDeceased) {
+    const head = document.head;
+    const link = document.createElement('link');
+
+    link.type = 'text/css';
+    link.rel = 'stylesheet';
+    link.href = isDeceased ? 'css/dead.css' : 'css/alive.css';
+
+    // Remove existing custom stylesheet if present
+    const existingLink = document.querySelector('link[rel=stylesheet][data-custom-style]');
+    if (existingLink) {
+        head.removeChild(existingLink);
+    }
+
+    // Add the new stylesheet
+    link.setAttribute('data-custom-style', ''); // Mark this link for easy identification
+    head.appendChild(link);
+}
+
+
 function autocompleteSearch() {
     const name = document.getElementById('search-box').value;
     if (name.length < 3) {
@@ -139,7 +160,7 @@ function autocompleteSearch() {
     }
 
     const script = document.createElement('script');
-    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&callback=handleAutocompleteResponse`;
+    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse`;
     document.head.appendChild(script);
     document.head.removeChild(script);
 }
