@@ -75,10 +75,7 @@ function fetchDetails(personId) {
                     const imgAlt = isDeceased ? 'picture representing death' : 'picture representing life';
                     const status  = isDeceased ? 'DEAD' : 'ALIVE';
 
-                    const specialPersonIds = [ // Add special person IDs here
-                    'Q1740276'/*Geordie Walker*/, 
-                    'Q1361323'/*Jazz Coleman*/
-                    ]; 
+
 
                     let htmlContent = `
                         <div id="status" class="${statusClass}">
