@@ -84,3 +84,8 @@ color: white;
   color: white;
   text-decoration: none;
 }
+
+/* highlighted selected item in search suggestions */
+.suggestion-item.active {
+    background-color: #e0e0e0; /* Example styling for active item */
+}

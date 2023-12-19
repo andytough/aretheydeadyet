@@ -160,6 +160,13 @@ function autocompleteSearch() {
     script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse`;
     document.head.appendChild(script);
     document.head.removeChild(script);
+    
+        // Remove active class from any previously highlighted item
+    const activeItem = document.querySelector('.suggestion-item.active');
+    if (activeItem) {
+        activeItem.classList.remove('active');
+    }
+    // end Remove active class from any previously highlighted item
 }
 
 
@@ -212,6 +219,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// listening for keyboard interactions on the search box
+document.getElementById('search-box').addEventListener('keydown', function(event) {
+    handleKeyPress(event);
+});
+
+// handle key press
+function handleKeyPress(event) {
+    const suggestionsContainer = document.getElementById('suggestions');
+    const activeItem = document.querySelector('.suggestion-item.active');
+    let newActiveItem;
+
+    switch (event.key) {
+        case 'ArrowDown':
+            if (activeItem) {
+                newActiveItem = activeItem.nextElementSibling || suggestionsContainer.firstElementChild;
+            } else {
+                newActiveItem = suggestionsContainer.firstElementChild;
+            }
+            break;
+        case 'ArrowUp':
+            if (activeItem) {
+                newActiveItem = activeItem.previousElementSibling || suggestionsContainer.lastElementChild;
+            } else {
+                newActiveItem = suggestionsContainer.lastElementChild;
+            }
+            break;
+        case 'Enter':
+            if (activeItem) {
+                activeItem.click();
+                return;
+            }
+            break;
+    }
+
+    if (newActiveItem) {
+        if (activeItem) {
+            activeItem.classList.remove('active');
+        }
+        newActiveItem.classList.add('active');
+    }
+}
 
 // more
 
