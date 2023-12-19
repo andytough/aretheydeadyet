@@ -84,7 +84,7 @@ function fetchDetails(personId) {
                             <p><strong>Date of Death:</strong> ${formattedDOD}</p>
                             <p><strong>Gender:</strong> ${gender}</p>-->
                             <!-- Additional content will be inserted here -->
-                            <img id="${imgId}" class="${statusClass}" alt="${imgAlt}" src="${imgSrc}">
+                            <img id="${imgId}" class="${statusClass} u-full-width" alt="${imgAlt}" src="${imgSrc}">
                         </div>
                     `;
 

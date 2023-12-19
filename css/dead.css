@@ -2,3 +2,10 @@ body {
 color: white;
 background-color:black;
 }
+a, a:hover, a:visited, a:active {
+  color: white;
+  text-decoration-color: grey;
+}
+#search-box {
+display: none;
+}

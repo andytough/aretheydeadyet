@@ -11,3 +11,10 @@ color: black;
   color: black;
   text-decoration: none;
 }
+a, a:hover, a:visited, a:active {
+  color: black;
+  text-decoration-color: black;
+}
+#search-box {
+display: none;
+}
