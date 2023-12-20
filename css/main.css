@@ -61,8 +61,12 @@ button {
     max-width: 100%;
 }*/
 
-img.u-pull-left.icon {
+img.u-pull-left.iconblack, img.u-pull-left.iconwhite {
 width: 70px;
+}
+
+img.u-pull-left.iconwhite {
+display: none;
 }
 
 #header {
@@ -102,44 +106,48 @@ background-color:black;
 }
 
 h1.home {
-font-size: 2rem;
+font-size: 3rem;
 }
 
-body p {
+body p.status {
 color: white;
 font-size: 2rem;
 font-weight: 900;
+color:red;
 }
 /* Larger than mobile */
 @media (min-width: 400px) {
-body p {
+body p.status {
 font-size: 3rem;
 }
 }
 /* Larger than phablet (also point when grid becomes active) */
 @media (min-width: 550px) {
-body p {
+body p.status {
 font-size: 4rem;
 }
 }
 
 /* Larger than tablet */
 @media (min-width: 750px) {
-body p {
+body p.status {
 font-size: 4rem;
 }
 }
 
 /* Larger than desktop */
 @media (min-width: 1000px) {
-body p {
+body p.status {
 font-size: 6rem;
+}
+h1.home {
+font-size: 5rem;
 }
 }
 
 /* Larger than Desktop HD */
 @media (min-width: 1200px) {
-body p {
+body p.status {
 font-size: 8rem;
 }
 }

@@ -79,7 +79,7 @@ function fetchDetails(personId) {
 
                     let htmlContent = `
                         <div id="status" class="${statusClass}">
-                            <p><a href="https://www.wikidata.org/wiki/${personId}" target="_blank">${personLabel}</a> is ${status}</p>
+                            <p class="status"><a href="https://www.wikidata.org/wiki/${personId}" class="status" target="_blank">${personLabel}</a> is ${status}</p>
                             <!--<p><strong>Date of Birth:</strong> ${formattedDOB}</p>
                             <p><strong>Date of Death:</strong> ${formattedDOD}</p>
                             <p><strong>Gender:</strong> ${gender}</p>-->

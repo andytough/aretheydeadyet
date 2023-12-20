@@ -2,10 +2,22 @@ body {
 color: white;
 background-color:black;
 }
-a, a:hover, a:visited, a:active {
+a.status, a:hover.status, a:visited.status, a:active.status {
   color: white;
   text-decoration-color: grey;
 }
-#search-box {
+/* #search-box {
 display: none;
+} */
+
+body p.status {
+color: white;
+}
+
+img.u-pull-left.iconwhite {
+display: none;
+}
+
+img.u-pull-left.iconblack {
+display: inline;
 }
