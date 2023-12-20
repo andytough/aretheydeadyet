@@ -239,6 +239,7 @@ function handleKeyPress(event) {
                 newActiveItem = suggestionsContainer.firstElementChild;
             }
             break;
+
         case 'ArrowUp':
             if (activeItem) {
                 newActiveItem = activeItem.previousElementSibling || suggestionsContainer.lastElementChild;
@@ -246,21 +247,27 @@ function handleKeyPress(event) {
                 newActiveItem = suggestionsContainer.lastElementChild;
             }
             break;
+
         case 'Enter':
             if (activeItem) {
                 activeItem.click();
+                suggestionsContainer.style.display = 'none'; // Hide the suggestions list
+                event.preventDefault(); // Prevent default to stop any unintended behavior
                 return;
             }
             break;
     }
 
+    // Update the active item
     if (newActiveItem) {
         if (activeItem) {
             activeItem.classList.remove('active');
         }
         newActiveItem.classList.add('active');
+        event.preventDefault(); // Prevent default to stop any unintended behavior
     }
 }
+
 
 // more
 
