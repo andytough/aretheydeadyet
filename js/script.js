@@ -175,7 +175,9 @@ function handleAutocompleteResponse(response) {
     response.search.forEach(item => {
         let displayText = item.label;
         if (item.description) {
-            displayText += ` - ${item.description}`;
+            // Remove the date of death from the description
+            const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
+            displayText += ` - ${descriptionWithoutDeathDate}`;
         }
         suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
     });
