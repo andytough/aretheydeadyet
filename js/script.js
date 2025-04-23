@@ -14,6 +14,7 @@ function getSparqlQuery(personId) {
     SELECT ?dateOfBirth ?dateOfDeath ?genderLabel 
            (YEAR(?dateOfDeath) - YEAR(?dateOfBirth) AS ?ageAtDeath)
     WHERE {
+      wd:${personId} wdt:P31 wd:Q5 .  # Add this line here to filter for humans only
       wd:${personId} wdt:P569 ?dateOfBirth;
                       OPTIONAL { wd:${personId} wdt:P570 ?dateOfDeath. }
                       OPTIONAL { wd:${personId} wdt:P21 ?gender. }
