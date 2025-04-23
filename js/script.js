@@ -195,63 +195,25 @@ function autocompleteSearch() {
 
 
 function handleAutocompleteResponse(response) {
-    // First, get all search results
-    const suggestions = response.search;
-    
-    // If no results, hide suggestions and return
-    if (suggestions.length === 0) {
-        document.getElementById('suggestions').style.display = 'none';
-        return;
-    }
-    
-    // Create a temporary array to store valid entities (with birth dates)
-    const validEntities = [];
-    let pendingChecks = suggestions.length;
-    
-    // For each suggestion, check if it has a birth date
-    suggestions.forEach(item => {
-        // Build a SPARQL query to check for date of birth
-        const checkQuery = `
-            ASK {
-                wd:${item.id} wdt:P569 ?birthDate.
-            }
-        `;
-        
-        const checkUrl = endpoint + "?query=" + encodeURIComponent(checkQuery) + "&format=json";
-        
-        // Fetch to check if entity has birth date
-        fetch(checkUrl)
-            .then(response => response.json())
-            .then(data => {
-                pendingChecks--;
-                
-                // If entity has a birth date, add to valid entities
-                if (data.boolean === true) {
-                    validEntities.push(item);
-                }
-                
-                // If all checks complete, build the suggestions HTML
-                if (pendingChecks === 0) {
-                    displayValidSuggestions(validEntities);
-                }
-            })
-            .catch(error => {
-                console.error('Error checking entity:', error);
-                pendingChecks--;
-                
-                // If all checks complete despite errors, build suggestions
-                if (pendingChecks === 0) {
-                    displayValidSuggestions(validEntities);
-                }
-            });
-    });
-}
-
-// Helper function to display the valid suggestions
-function displayValidSuggestions(validEntities) {
     let suggestionsHTML = '';
+    const filteredResults = response.search.filter(item => {
+        // Skip items that are clearly not living beings based on description
+        if (item.description && 
+            (item.description.includes('building') || 
+             item.description.includes('tower') ||
+             item.description.includes('monument') ||
+             item.description.includes('structure') ||
+             item.description.includes('organization') ||
+             item.description.includes('company') ||
+             item.description.includes('website'))) {
+            return false;
+        }
+        
+        // Include items that are likely living beings (human or animal)
+        return true;
+    });
     
-    validEntities.forEach(item => {
+    filteredResults.forEach(item => {
         let displayText = item.label;
         if (item.description) {
             // Remove the date of death from the description
@@ -260,11 +222,11 @@ function displayValidSuggestions(validEntities) {
         }
         suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
     });
-    
+
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = suggestionsHTML;
-    suggestionsElement.style.display = validEntities.length > 0 ? 'block' : 'none';
-    
+    suggestionsElement.style.display = filteredResults.length > 0 ? 'block' : 'none';
+
     // Add click event listeners for each suggestion
     document.querySelectorAll('.suggestion-item').forEach(item => {
         item.addEventListener('click', function() {
