@@ -1,5 +1,6 @@
 const endpoint = "https://query.wikidata.org/sparql";
 
+
 function getLabelQuery(personId) {
     return `
     SELECT ?personLabel 
@@ -9,18 +10,19 @@ function getLabelQuery(personId) {
     }`;
 }
 
+
 function getSparqlQuery(personId) {
     return `
     SELECT ?dateOfBirth ?dateOfDeath ?genderLabel 
            (YEAR(?dateOfDeath) - YEAR(?dateOfBirth) AS ?ageAtDeath)
     WHERE {
-      wd:${personId} wdt:P31 wd:Q5 .  # Add this line here to filter for humans only
       wd:${personId} wdt:P569 ?dateOfBirth;
                       OPTIONAL { wd:${personId} wdt:P570 ?dateOfDeath. }
                       OPTIONAL { wd:${personId} wdt:P21 ?gender. }
                       SERVICE wikibase:label { bd:serviceParam wikibase:language "en". ?gender rdfs:label ?genderLabel }
     }`;
 }
+
 
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -30,9 +32,11 @@ function formatDate(dateString) {
     return `${day}/${month}/${year}`;
 }
 
+
 function fetchDetails(personId) {
     const labelQuery = getLabelQuery(personId);
     const labelUrl = endpoint + "?query=" + encodeURIComponent(labelQuery) + "&format=json";
+
 
     fetch(labelUrl)
     .then(response => response.json())
@@ -41,6 +45,7 @@ function fetchDetails(personId) {
             const personLabel = data.results.bindings[0].personLabel.value;
             const detailsQuery = getSparqlQuery(personId);
             const detailsUrl = endpoint + "?query=" + encodeURIComponent(detailsQuery) + "&format=json";
+
 
             fetch(detailsUrl)
             .then(response => response.json())
@@ -69,12 +74,17 @@ function fetchDetails(personId) {
                         }
                     }
 
+
     addCssLink(isDeceased);
+
 
                     const statusClass = isDeceased ? 'dead' : 'alive';
                     const imgId = isDeceased ? 'dead' : 'alive';
                     const imgAlt = isDeceased ? 'picture representing death' : 'picture representing life';
                     const status  = isDeceased ? 'DEAD' : 'ALIVE';
+
+
+
 
 
 
@@ -89,9 +99,11 @@ function fetchDetails(personId) {
                         </div>
                     `;
 
+
                     // Check if the personId is in the special list
 if (specialPersonIds.includes(personId)) {
     const additionalContentUrl = `people/${personId}.html`; // Path to your HTML files
+
 
     // Fetch the additional HTML content
     fetch(additionalContentUrl)
@@ -99,6 +111,7 @@ if (specialPersonIds.includes(personId)) {
         .then(additionalContent => {
             // Insert the additional content after the specific paragraph and before the image
             htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
+
 
             document.getElementById('person-info').innerHTML = htmlContent;
         })
@@ -111,6 +124,7 @@ if (specialPersonIds.includes(personId)) {
     // If not in the special list, just display the original content
     document.getElementById('person-info').innerHTML = htmlContent;
 }
+
 
                 } else {
                     document.getElementById('person-info').innerHTML = "<p>No details found.</p>";
@@ -130,13 +144,16 @@ if (specialPersonIds.includes(personId)) {
     });
 }
 
+
 function addCssLink(isDeceased) {
     const head = document.head;
     const link = document.createElement('link');
 
+
     link.type = 'text/css';
     link.rel = 'stylesheet';
     link.href = isDeceased ? 'css/dead.css' : 'css/alive.css';
+
 
     // Remove existing custom stylesheet if present
     const existingLink = document.querySelector('link[rel=stylesheet][data-custom-style]');
@@ -144,10 +161,13 @@ function addCssLink(isDeceased) {
         head.removeChild(existingLink);
     }
 
+
     // Add the new stylesheet
     link.setAttribute('data-custom-style', ''); // Mark this link for easy identification
     head.appendChild(link);
 }
+
+
 
 
 function autocompleteSearch() {
@@ -157,8 +177,9 @@ function autocompleteSearch() {
         return;
     }
 
+
     const script = document.createElement('script');
-    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse&filter=P569`;
+    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse`;
     document.head.appendChild(script);
     document.head.removeChild(script);
     
@@ -171,9 +192,11 @@ function autocompleteSearch() {
 }
 
 
-function handleAutocompleteResponse(response) {
+
+
+function displayValidSuggestions(validItems) {
     let suggestionsHTML = '';
-    response.search.forEach(item => {
+    validItems.forEach(item => {
         let displayText = item.label;
         if (item.description) {
             // Remove the date of death from the description
@@ -184,9 +207,13 @@ function handleAutocompleteResponse(response) {
     });
 
     const suggestionsElement = document.getElementById('suggestions');
-    suggestionsElement.innerHTML = suggestionsHTML;
-    suggestionsElement.style.display = 'block';
-
+    
+    if (validItems.length === 0)
+        suggestionsElement.innerHTML = '<div class="no-results">No results with birth dates found</div>';
+    } else {
+        suggestionsElement.innerHTML = suggestionsHTML;
+    }
+    
     // Add click event listeners for each suggestion
     document.querySelectorAll('.suggestion-item').forEach(item => {
         item.addEventListener('click', function() {
@@ -197,6 +224,7 @@ function handleAutocompleteResponse(response) {
     });
 }
 
+
 document.getElementById('search-box').addEventListener('input', autocompleteSearch);
 document.getElementById('suggestions').addEventListener('change', function() {
     const personId = this.value;
@@ -204,11 +232,14 @@ document.getElementById('suggestions').addEventListener('change', function() {
     this.style.display = 'none';
 });
 
+
 // additional
+
 
 document.addEventListener('DOMContentLoaded', function() {
     var personInfo = document.getElementById('person-info');
     var childDivs = personInfo.getElementsByTagName('div');
+
 
     // Check each child div for a class
     for (var i = 0; i < childDivs.length; i++) {
@@ -223,16 +254,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
 // listening for keyboard interactions on the search box
 document.getElementById('search-box').addEventListener('keydown', function(event) {
     handleKeyPress(event);
 });
+
 
 // handle key press
 function handleKeyPress(event) {
     const suggestionsContainer = document.getElementById('suggestions');
     const activeItem = document.querySelector('.suggestion-item.active');
     let newActiveItem;
+
 
     switch (event.key) {
         case 'ArrowDown':
@@ -243,6 +277,7 @@ function handleKeyPress(event) {
             }
             break;
 
+
         case 'ArrowUp':
             if (activeItem) {
                 newActiveItem = activeItem.previousElementSibling || suggestionsContainer.lastElementChild;
@@ -250,6 +285,7 @@ function handleKeyPress(event) {
                 newActiveItem = suggestionsContainer.lastElementChild;
             }
             break;
+
 
         case 'Enter':
             if (activeItem) {
@@ -260,6 +296,7 @@ function handleKeyPress(event) {
             }
             break;
     }
+
 
     // Update the active item
     if (newActiveItem) {
@@ -272,13 +309,16 @@ function handleKeyPress(event) {
 }
 
 
+
+
 // more
+
 
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.type === 'childList') {
             var personInfo = document.getElementById('person-info');
-            if (personInfo.querySelector('div[class]')) {
+            if (personInfo.querySelector('div[class]'))))
                 var atdyDiv = document.querySelector('.atdy');
                 if (atdyDiv) {
                     atdyDiv.classList.remove('atdy');
@@ -288,7 +328,9 @@ var observer = new MutationObserver(function(mutations) {
     });
 });
 
+
 var targetNode = document.getElementById('person-info');
 var config = { childList: true };
+
 
 observer.observe(targetNode, config);
