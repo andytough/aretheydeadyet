@@ -247,27 +247,6 @@ function handleAutocompleteResponse(response) {
         });
     });
 }
-    
-    Promise.all(promises).then(() => {
-        if (!suggestionsElement.hasChildNodes()) {
-            suggestionsElement.innerHTML = '<div class="suggestion-item">No living entities found.</div>';
-        }
-    });
-
-    const suggestionsElement = document.getElementById('suggestions');
-    suggestionsElement.innerHTML = suggestionsHTML;
-    suggestionsElement.style.display = 'block';
-
-
-    // Add click event listeners for each suggestion
-    document.querySelectorAll('.suggestion-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const personId = this.getAttribute('data-id');
-            fetchDetails(personId);
-            suggestionsElement.style.display = 'none';
-        });
-    });
-}
 
 
 document.getElementById('search-box').addEventListener('input', autocompleteSearch);
