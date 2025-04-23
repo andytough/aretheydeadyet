@@ -158,7 +158,7 @@ function autocompleteSearch() {
     }
 
     const script = document.createElement('script');
-    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse&filter=P31:Q5`;
+    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse&type=item&profile=human`;
     document.head.appendChild(script);
     document.head.removeChild(script);
     
@@ -174,20 +174,19 @@ function autocompleteSearch() {
 function handleAutocompleteResponse(response) {
     let suggestionsHTML = '';
     response.search.forEach(item => {
-        // Only show results that mention "human" in the description
-        if (item.description && item.description.toLowerCase().includes('human')) {
-            let displayText = item.label;
-            if (item.description) {
-                const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
-                displayText += ` - ${descriptionWithoutDeathDate}`;
-            }
-            suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
+        let displayText = item.label;
+        if (item.description) {
+            // Remove the date of death from the description
+            const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
+            displayText += ` - ${descriptionWithoutDeathDate}`;
         }
+        suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
     });
+
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = suggestionsHTML;
     suggestionsElement.style.display = 'block';
-    
+
     // Add click event listeners for each suggestion
     document.querySelectorAll('.suggestion-item').forEach(item => {
         item.addEventListener('click', function() {
