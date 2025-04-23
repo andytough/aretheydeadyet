@@ -99,27 +99,33 @@ function fetchDetails(personId) {
                         </div>
                     `;
 
-                    // Check if the personId is in the special list
-                    if (specialPersonIds.includes(personId)) {
-                        const additionalContentUrl = `people/${personId}.html`; // Path to your HTML files
 
-                        // Fetch the additional HTML content
-                        fetch(additionalContentUrl)
-                            .then(response => response.text())
-                            .then(additionalContent => {
-                                // Insert the additional content after the specific paragraph and before the image
-                                htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
-                                document.getElementById('person-info').innerHTML = htmlContent;
-                            })
-                            .catch(error => {
-                                console.error('Error fetching additional content:', error);
-                                // If there's an error, still display the original content
-                                document.getElementById('person-info').innerHTML = htmlContent;
-                            });
-                    } else {
-                        // If not in the special list, just display the original content
-                        document.getElementById('person-info').innerHTML = htmlContent;
-                    }
+                    // Check if the personId is in the special list
+if (specialPersonIds.includes(personId)) {
+    const additionalContentUrl = `people/${personId}.html`; // Path to your HTML files
+
+
+    // Fetch the additional HTML content
+    fetch(additionalContentUrl)
+        .then(response => response.text())
+        .then(additionalContent => {
+            // Insert the additional content after the specific paragraph and before the image
+            htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
+
+
+            document.getElementById('person-info').innerHTML = htmlContent;
+        })
+        .catch(error => {
+            console.error('Error fetching additional content:', error);
+            // If there's an error, still display the original content
+            document.getElementById('person-info').innerHTML = htmlContent;
+        });
+} else {
+    // If not in the special list, just display the original content
+    document.getElementById('person-info').innerHTML = htmlContent;
+}
+
+
                 } else {
                     document.getElementById('person-info').innerHTML = "<p>No details found.</p>";
                 }
@@ -190,24 +196,7 @@ function autocompleteSearch() {
 
 function handleAutocompleteResponse(response) {
     let suggestionsHTML = '';
-    const filteredResults = response.search.filter(item => {
-        // Skip items that are clearly not living beings based on description
-        if (item.description && 
-            (item.description.includes('building') || 
-             item.description.includes('tower') ||
-             item.description.includes('monument') ||
-             item.description.includes('structure') ||
-             item.description.includes('organization') ||
-             item.description.includes('company') ||
-             item.description.includes('website'))) {
-            return false;
-        }
-        
-        // Include items that are likely living beings (human or animal)
-        return true;
-    });
-    
-    filteredResults.forEach(item => {
+    response.search.forEach(item => {
         let displayText = item.label;
         if (item.description) {
             // Remove the date of death from the description
@@ -217,9 +206,11 @@ function handleAutocompleteResponse(response) {
         suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
     });
 
+
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = suggestionsHTML;
-    suggestionsElement.style.display = filteredResults.length > 0 ? 'block' : 'none';
+    suggestionsElement.style.display = 'block';
+
 
     // Add click event listeners for each suggestion
     document.querySelectorAll('.suggestion-item').forEach(item => {
@@ -229,7 +220,6 @@ function handleAutocompleteResponse(response) {
             suggestionsElement.style.display = 'none';
         });
     });
-}
 }
 
 
