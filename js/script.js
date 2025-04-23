@@ -207,34 +207,46 @@ function autocompleteSearch() {
 
 
 function handleAutocompleteResponse(response) {
-    let suggestionsHTML = '';
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = '';
     suggestionsElement.style.display = 'block';
-    
-    let promises = response.search.map(item => {
+
+    const filteredItems = [];
+
+    const checks = response.search.map(item => {
         return hasDateOfBirth(item.id).then(hasDOB => {
-            if (hasDOB) {
-                let displayText = item.label;
-                if (item.description) {
-                    const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
-                    displayText += ` - ${descriptionWithoutDeathDate}`;
-                }
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.setAttribute('data-id', item.id);
-                div.textContent = displayText;
-    
-                div.addEventListener('click', function () {
-                    const personId = this.getAttribute('data-id');
-                    fetchDetails(personId);
-                    suggestionsElement.style.display = 'none';
-                });
-    
-                suggestionsElement.appendChild(div);
-            }
+            if (hasDOB) filteredItems.push(item);
         });
     });
+
+    Promise.all(checks).then(() => {
+        if (filteredItems.length === 0) {
+            suggestionsElement.innerHTML = '<div class="suggestion-item">No living entities found.</div>';
+            return;
+        }
+
+        filteredItems.forEach(item => {
+            let displayText = item.label;
+            if (item.description) {
+                const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
+                displayText += ` - ${descriptionWithoutDeathDate}`;
+            }
+
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.setAttribute('data-id', item.id);
+            div.textContent = displayText;
+
+            div.addEventListener('click', function () {
+                const personId = this.getAttribute('data-id');
+                fetchDetails(personId);
+                suggestionsElement.style.display = 'none';
+            });
+
+            suggestionsElement.appendChild(div);
+        });
+    });
+}
     
     Promise.all(promises).then(() => {
         if (!suggestionsElement.hasChildNodes()) {
