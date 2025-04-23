@@ -220,29 +220,34 @@ function handleAutocompleteResponse(response) {
     });
 
     Promise.all(checks).then(() => {
-        if (filteredItems.length === 0) {
+        // Remove duplicate IDs
+        const uniqueItems = Array.from(
+            new Map(filteredItems.map(item => [item.id, item])).values()
+        );
+    
+        if (uniqueItems.length === 0) {
             suggestionsElement.innerHTML = '<div class="suggestion-item">No living entities found.</div>';
             return;
         }
-
-        filteredItems.forEach(item => {
+    
+        uniqueItems.forEach(item => {
             let displayText = item.label;
             if (item.description) {
                 const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
                 displayText += ` - ${descriptionWithoutDeathDate}`;
             }
-
+    
             const div = document.createElement('div');
             div.className = 'suggestion-item';
             div.setAttribute('data-id', item.id);
             div.textContent = displayText;
-
+    
             div.addEventListener('click', function () {
                 const personId = this.getAttribute('data-id');
                 fetchDetails(personId);
                 suggestionsElement.style.display = 'none';
             });
-
+    
             suggestionsElement.appendChild(div);
         });
     });
