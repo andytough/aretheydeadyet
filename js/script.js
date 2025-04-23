@@ -23,17 +23,19 @@ function getSparqlQuery(personId) {
     }`;
 }
 
-function hasDateOfBirth(entityId) {
+function getEntitiesWithDOB(ids) {
+    const valuesClause = ids.map(id => `wd:${id}`).join(' ');
     const query = `
-    SELECT ?dob WHERE {
-        wd:${entityId} wdt:P569 ?dob.
-    } LIMIT 1`;
+    SELECT ?entity WHERE {
+        VALUES ?entity { ${valuesClause} }
+        ?entity wdt:P569 ?dob.
+    }`;
     const url = endpoint + "?query=" + encodeURIComponent(query) + "&format=json";
 
     return fetch(url)
         .then(response => response.json())
-        .then(data => data.results.bindings.length > 0)
-        .catch(() => false);
+        .then(data => data.results.bindings.map(binding => binding.entity.value.split('/').pop()))
+        .catch(() => []);
 }
 
 function formatDate(dateString) {
@@ -211,43 +213,40 @@ function handleAutocompleteResponse(response) {
     suggestionsElement.innerHTML = '';
     suggestionsElement.style.display = 'block';
 
-    const filteredItems = [];
+    const allItems = response.search;
+    const ids = allItems.map(item => item.id);
 
-    const checks = response.search.map(item => {
-        return hasDateOfBirth(item.id).then(hasDOB => {
-            if (hasDOB) filteredItems.push(item);
-        });
-    });
+    getEntitiesWithDOB(ids).then(validIds => {
+        const filteredItems = allItems.filter(item => validIds.includes(item.id));
 
-    Promise.all(checks).then(() => {
-        // Remove duplicate IDs
+        // Deduplicate by ID
         const uniqueItems = Array.from(
             new Map(filteredItems.map(item => [item.id, item])).values()
         );
-    
+
         if (uniqueItems.length === 0) {
             suggestionsElement.innerHTML = '<div class="suggestion-item">No living entities found.</div>';
             return;
         }
-    
+
         uniqueItems.forEach(item => {
             let displayText = item.label;
             if (item.description) {
                 const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
                 displayText += ` - ${descriptionWithoutDeathDate}`;
             }
-    
+
             const div = document.createElement('div');
             div.className = 'suggestion-item';
             div.setAttribute('data-id', item.id);
             div.textContent = displayText;
-    
+
             div.addEventListener('click', function () {
                 const personId = this.getAttribute('data-id');
                 fetchDetails(personId);
                 suggestionsElement.style.display = 'none';
             });
-    
+
             suggestionsElement.appendChild(div);
         });
     });
