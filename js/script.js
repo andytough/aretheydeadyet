@@ -99,33 +99,27 @@ function fetchDetails(personId) {
                         </div>
                     `;
 
-
                     // Check if the personId is in the special list
-if (specialPersonIds.includes(personId)) {
-    const additionalContentUrl = `people/${personId}.html`; // Path to your HTML files
+                    if (specialPersonIds.includes(personId)) {
+                        const additionalContentUrl = `people/${personId}.html`; // Path to your HTML files
 
-
-    // Fetch the additional HTML content
-    fetch(additionalContentUrl)
-        .then(response => response.text())
-        .then(additionalContent => {
-            // Insert the additional content after the specific paragraph and before the image
-            htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
-
-
-            document.getElementById('person-info').innerHTML = htmlContent;
-        })
-        .catch(error => {
-            console.error('Error fetching additional content:', error);
-            // If there's an error, still display the original content
-            document.getElementById('person-info').innerHTML = htmlContent;
-        });
-} else {
-    // If not in the special list, just display the original content
-    document.getElementById('person-info').innerHTML = htmlContent;
-}
-
-
+                        // Fetch the additional HTML content
+                        fetch(additionalContentUrl)
+                            .then(response => response.text())
+                            .then(additionalContent => {
+                                // Insert the additional content after the specific paragraph and before the image
+                                htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
+                                document.getElementById('person-info').innerHTML = htmlContent;
+                            })
+                            .catch(error => {
+                                console.error('Error fetching additional content:', error);
+                                // If there's an error, still display the original content
+                                document.getElementById('person-info').innerHTML = htmlContent;
+                            });
+                    } else {
+                        // If not in the special list, just display the original content
+                        document.getElementById('person-info').innerHTML = htmlContent;
+                    }
                 } else {
                     document.getElementById('person-info').innerHTML = "<p>No details found.</p>";
                 }
