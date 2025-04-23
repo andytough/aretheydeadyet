@@ -170,6 +170,9 @@ function addCssLink(isDeceased) {
 
 
 
+// Define specialPersonIds if it's not defined elsewhere
+const specialPersonIds = specialPersonIds || [];
+
 function autocompleteSearch() {
     const name = document.getElementById('search-box').value;
     if (name.length < 3) {
@@ -177,68 +180,84 @@ function autocompleteSearch() {
         return;
     }
 
+    // Show loading indicator
+    const suggestionsElement = document.getElementById('suggestions');
+    suggestionsElement.innerHTML = '<div class="loading">Loading...</div>';
+    suggestionsElement.style.display = 'block';
 
-    const script = document.createElement('script');
-    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse`;
-    document.head.appendChild(script);
-    document.head.removeChild(script);
+    // Use a direct SPARQL query instead of the Wikidata API
+    // This allows us to filter for entities with birth dates in a single query
+    const sparqlQuery = `
+    SELECT ?entity ?entityLabel ?description
+    WHERE {
+      ?entity wdt:P569 ?dateOfBirth;  # Must have a date of birth
+             rdfs:label ?label.
+      FILTER(CONTAINS(LCASE(?label), LCASE("${name}")))
+      FILTER(LANG(?label) = "en")
+      OPTIONAL { 
+        ?entity schema:description ?description. 
+        FILTER(LANG(?description) = "en") 
+      }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    }
+    LIMIT 10`;
+
+    const url = endpoint + "?query=" + encodeURIComponent(sparqlQuery) + "&format=json";
+
+    // Use fetch API with proper headers
+    fetch(url, {
+        headers: {
+            'Accept': 'application/sparql-results+json',
+            'User-Agent': 'AretheydeadyetApp/1.0'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        let suggestionsHTML = '';
+        
+        if (data.results.bindings.length === 0) {
+            suggestionsHTML = '<div class="no-results">No results found with birth dates</div>';
+        } else {
+            data.results.bindings.forEach(item => {
+                const entityId = item.entity.value.split('/').pop();
+                let displayText = item.entityLabel.value;
+                
+                if (item.description) {
+                    // Remove the date of death from the description
+                    const descriptionWithoutDeathDate = item.description.value.replace(/[-–]\d{4}/, '');
+                    displayText += ` - ${descriptionWithoutDeathDate}`;
+                }
+                
+                suggestionsHTML += `<div class="suggestion-item" data-id="${entityId}">${displayText}</div>`;
+            });
+        }
+
+        suggestionsElement.innerHTML = suggestionsHTML;
+        
+        // Add click event listeners for each suggestion
+        document.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const personId = this.getAttribute('data-id');
+                fetchDetails(personId);
+                suggestionsElement.style.display = 'none';
+            });
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching suggestions:', error);
+        suggestionsElement.innerHTML = '<div class="error">Error loading suggestions</div>';
+    });
     
-        // Remove active class from any previously highlighted item
+    // Remove active class from any previously highlighted item
     const activeItem = document.querySelector('.suggestion-item.active');
     if (activeItem) {
         activeItem.classList.remove('active');
     }
-    // end Remove active class from any previously highlighted item
-}
-
-
-
-
-function handleAutocompleteResponse(response) {
-    let suggestionsHTML = '';
-    
-    // Filter the results to likely include only entities with birth dates
-    const filteredResults = response.search.filter(item => {
-        if (!item.description) return false;
-        
-        // Common patterns for entities that typically have birth dates
-        const likelyHasBirthDate = /\b(born|birth|actor|actress|singer|writer|author|politician|athlete|player|scientist|artist|composer|director|philosopher|monarch|queen|king|president|prime minister)\b/i.test(item.description);
-        
-        // Patterns for entities that typically don't have birth dates
-        const unlikelyHasBirthDate = /\b(building|structure|organization|company|brand|location|place|monument|landmark|event|film|movie|book|novel|song|album|award|language|concept|theory)\b/i.test(item.description);
-        
-        // Include if it likely has a birth date and doesn't match patterns for non-person entities
-        return likelyHasBirthDate && !unlikelyHasBirthDate;
-    });
-    
-    filteredResults.forEach(item => {
-        let displayText = item.label;
-        if (item.description) {
-            // Remove the date of death from the description
-            const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
-            displayText += ` - ${descriptionWithoutDeathDate}`;
-        }
-        suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
-    });
-
-    const suggestionsElement = document.getElementById('suggestions');
-    
-    if (filteredResults.length === 0) {
-        // If no results after filtering, show a message
-        suggestionsHTML = '<div class="no-results">No relevant results found. Try a different search.</div>';
-    }
-    
-    suggestionsElement.innerHTML = suggestionsHTML;
-    suggestionsElement.style.display = 'block';
-
-    // Add click event listeners for each suggestion
-    document.querySelectorAll('.suggestion-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const personId = this.getAttribute('data-id');
-            fetchDetails(personId);
-            suggestionsElement.style.display = 'none';
-        });
-    });
 }
 
 
