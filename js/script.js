@@ -194,9 +194,24 @@ function autocompleteSearch() {
 
 
 
-function displayValidSuggestions(validItems) {
+function handleAutocompleteResponse(response) {
     let suggestionsHTML = '';
-    validItems.forEach(item => {
+    
+    // Filter the results to likely include only entities with birth dates
+    const filteredResults = response.search.filter(item => {
+        if (!item.description) return false;
+        
+        // Common patterns for entities that typically have birth dates
+        const likelyHasBirthDate = /\b(born|birth|actor|actress|singer|writer|author|politician|athlete|player|scientist|artist|composer|director|philosopher|monarch|queen|king|president|prime minister)\b/i.test(item.description);
+        
+        // Patterns for entities that typically don't have birth dates
+        const unlikelyHasBirthDate = /\b(building|structure|organization|company|brand|location|place|monument|landmark|event|film|movie|book|novel|song|album|award|language|concept|theory)\b/i.test(item.description);
+        
+        // Include if it likely has a birth date and doesn't match patterns for non-person entities
+        return likelyHasBirthDate && !unlikelyHasBirthDate;
+    });
+    
+    filteredResults.forEach(item => {
         let displayText = item.label;
         if (item.description) {
             // Remove the date of death from the description
@@ -208,12 +223,14 @@ function displayValidSuggestions(validItems) {
 
     const suggestionsElement = document.getElementById('suggestions');
     
-    if (validItems.length === 0)
-        suggestionsElement.innerHTML = '<div class="no-results">No results with birth dates found</div>';
-    } else {
-        suggestionsElement.innerHTML = suggestionsHTML;
+    if (filteredResults.length === 0) {
+        // If no results after filtering, show a message
+        suggestionsHTML = '<div class="no-results">No relevant results found. Try a different search.</div>';
     }
     
+    suggestionsElement.innerHTML = suggestionsHTML;
+    suggestionsElement.style.display = 'block';
+
     // Add click event listeners for each suggestion
     document.querySelectorAll('.suggestion-item').forEach(item => {
         item.addEventListener('click', function() {
@@ -318,7 +335,7 @@ var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.type === 'childList') {
             var personInfo = document.getElementById('person-info');
-            if (personInfo.querySelector('div[class]'))))
+            if (personInfo.querySelector('div[class]')) {
                 var atdyDiv = document.querySelector('.atdy');
                 if (atdyDiv) {
                     atdyDiv.classList.remove('atdy');
