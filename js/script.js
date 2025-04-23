@@ -174,19 +174,20 @@ function autocompleteSearch() {
 function handleAutocompleteResponse(response) {
     let suggestionsHTML = '';
     response.search.forEach(item => {
-        let displayText = item.label;
-        if (item.description) {
-            // Remove the date of death from the description
-            const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
-            displayText += ` - ${descriptionWithoutDeathDate}`;
+        // Only show results that mention "human" in the description
+        if (item.description && item.description.toLowerCase().includes('human')) {
+            let displayText = item.label;
+            if (item.description) {
+                const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
+                displayText += ` - ${descriptionWithoutDeathDate}`;
+            }
+            suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
         }
-        suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
     });
-
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = suggestionsHTML;
     suggestionsElement.style.display = 'block';
-
+    
     // Add click event listeners for each suggestion
     document.querySelectorAll('.suggestion-item').forEach(item => {
         item.addEventListener('click', function() {
