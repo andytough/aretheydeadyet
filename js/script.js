@@ -158,7 +158,7 @@ function autocompleteSearch() {
     }
 
     const script = document.createElement('script');
-    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse&filter=instance:Q5`;
+    script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse&filter=claim[31:5]`;
     document.head.appendChild(script);
     document.head.removeChild(script);
     
