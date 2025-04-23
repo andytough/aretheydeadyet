@@ -23,6 +23,18 @@ function getSparqlQuery(personId) {
     }`;
 }
 
+function hasDateOfBirth(entityId) {
+    const query = `
+    SELECT ?dob WHERE {
+        wd:${entityId} wdt:P569 ?dob.
+    } LIMIT 1`;
+    const url = endpoint + "?query=" + encodeURIComponent(query) + "&format=json";
+
+    return fetch(url)
+        .then(response => response.json())
+        .then(data => data.results.bindings.length > 0)
+        .catch(() => false);
+}
 
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -196,16 +208,39 @@ function autocompleteSearch() {
 
 function handleAutocompleteResponse(response) {
     let suggestionsHTML = '';
-    response.search.forEach(item => {
-        let displayText = item.label;
-        if (item.description) {
-            // Remove the date of death from the description
-            const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
-            displayText += ` - ${descriptionWithoutDeathDate}`;
-        }
-        suggestionsHTML += `<div class="suggestion-item" data-id="${item.id}">${displayText}</div>`;
+    const suggestionsElement = document.getElementById('suggestions');
+    suggestionsElement.innerHTML = '';
+    suggestionsElement.style.display = 'block';
+    
+    let promises = response.search.map(item => {
+        return hasDateOfBirth(item.id).then(hasDOB => {
+            if (hasDOB) {
+                let displayText = item.label;
+                if (item.description) {
+                    const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
+                    displayText += ` - ${descriptionWithoutDeathDate}`;
+                }
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.setAttribute('data-id', item.id);
+                div.textContent = displayText;
+    
+                div.addEventListener('click', function () {
+                    const personId = this.getAttribute('data-id');
+                    fetchDetails(personId);
+                    suggestionsElement.style.display = 'none';
+                });
+    
+                suggestionsElement.appendChild(div);
+            }
+        });
     });
-
+    
+    Promise.all(promises).then(() => {
+        if (!suggestionsElement.hasChildNodes()) {
+            suggestionsElement.innerHTML = '<div class="suggestion-item">No living entities found.</div>';
+        }
+    });
 
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = suggestionsHTML;
