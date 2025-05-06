@@ -95,7 +95,7 @@ function fetchDetails(personId) {
                     const statusClass = isDeceased ? 'dead' : 'alive';
                     const imgId = isDeceased ? 'dead' : 'alive';
                     const imgAlt = isDeceased ? 'picture representing death' : 'picture representing life';
-                    const status  = isDeceased ? 'DEAD' : 'ALIVE';
+                    const status  = isDeceased ? 'DEAD' : 'not dead yet';
 
 
 
