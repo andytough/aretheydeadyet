@@ -1,6 +1,11 @@
+// Wikidata SPARQL endpoint for querying data
 const endpoint = "https://query.wikidata.org/sparql";
 
-
+/**
+ * Generates a SPARQL query to fetch the English label (name) for a person
+ * @param {string} personId - The Wikidata ID (e.g., "Q40531")
+ * @returns {string} SPARQL query string
+ */
 function getLabelQuery(personId) {
     return `
     SELECT ?personLabel 
@@ -11,19 +16,36 @@ function getLabelQuery(personId) {
 }
 
 
+/**
+ * Generates a SPARQL query to fetch detailed information about a person
+ * Retrieves: date of birth, date of death, gender, age at death, and Wikipedia article URL
+ * @param {string} personId - The Wikidata ID (e.g., "Q40531")
+ * @returns {string} SPARQL query string
+ */
 function getSparqlQuery(personId) {
     return `
-    SELECT ?dateOfBirth ?dateOfDeath ?genderLabel 
+    SELECT ?dateOfBirth ?dateOfDeath ?genderLabel ?article
            (YEAR(?dateOfDeath) - YEAR(?dateOfBirth) AS ?ageAtDeath)
     WHERE {
       wd:${personId} wdt:P569 ?dateOfBirth;
                       OPTIONAL { wd:${personId} wdt:P570 ?dateOfDeath. }
                       OPTIONAL { wd:${personId} wdt:P21 ?gender. }
+                      OPTIONAL {
+                        ?article schema:about wd:${personId};
+                                 schema:isPartOf <https://en.wikipedia.org/>.
+                      }
                       SERVICE wikibase:label { bd:serviceParam wikibase:language "en". ?gender rdfs:label ?genderLabel }
     }`;
 }
 
+/**
+ * Filters a list of Wikidata IDs to only include entities that have a date of birth
+ * This helps filter out non-person entities from search results
+ * @param {Array} ids - Array of Wikidata IDs to check
+ * @returns {Promise<Array>} Promise that resolves to array of valid IDs with birth dates
+ */
 function getEntitiesWithDOB(ids) {
+    // Create a VALUES clause with all IDs to check in one query
     const valuesClause = ids.map(id => `wd:${id}`).join(' ');
     const query = `
     SELECT ?entity WHERE {
@@ -38,6 +60,11 @@ function getEntitiesWithDOB(ids) {
         .catch(() => []);
 }
 
+/**
+ * Formats an ISO date string to DD/MM/YYYY format
+ * @param {string} dateString - ISO format date string
+ * @returns {string} Formatted date string (DD/MM/YYYY)
+ */
 function formatDate(dateString) {
     const date = new Date(dateString);
     const day = ("0" + date.getDate()).slice(-2);
@@ -47,7 +74,13 @@ function formatDate(dateString) {
 }
 
 
+/**
+ * Main function to fetch and display all details about a person
+ * First fetches the person's name, then their details, then displays everything
+ * @param {string} personId - The Wikidata ID (e.g., "Q40531")
+ */
 function fetchDetails(personId) {
+    // First, get the person's name in English
     const labelQuery = getLabelQuery(personId);
     const labelUrl = endpoint + "?query=" + encodeURIComponent(labelQuery) + "&format=json";
 
@@ -57,6 +90,8 @@ function fetchDetails(personId) {
     .then(data => {
         if (data.results.bindings.length > 0) {
             const personLabel = data.results.bindings[0].personLabel.value;
+            
+            // Now get all other details about the person
             const detailsQuery = getSparqlQuery(personId);
             const detailsUrl = endpoint + "?query=" + encodeURIComponent(detailsQuery) + "&format=json";
 
@@ -66,11 +101,20 @@ function fetchDetails(personId) {
             .then(data => {
                 if (data.results.bindings.length > 0) {
                     const personInfo = data.results.bindings[0];
+                    
+                    // Format the dates for display
                     const formattedDOB = personInfo.dateOfBirth ? formatDate(personInfo.dateOfBirth.value) : 'Unknown';
                     const isDeceased = personInfo.dateOfDeath ? true : false;
                     const formattedDOD = isDeceased ? formatDate(personInfo.dateOfDeath.value) : 'N/A';
                     const gender = personInfo.genderLabel ? personInfo.genderLabel.value.toLowerCase() : 'unknown';
-                     let imgSrc;
+                    
+                    // Use Wikipedia link if available, otherwise fall back to Wikidata link
+                    const personLink = personInfo.article 
+                        ? personInfo.article.value 
+                        : `https://www.wikidata.org/wiki/${personId}`;
+                    
+                    // Select appropriate image based on deceased status and gender
+                    let imgSrc;
                     if (isDeceased) {
                         imgSrc = '/img/dead.png';
                     } else {
@@ -88,23 +132,19 @@ function fetchDetails(personId) {
                         }
                     }
 
-
+    // Load appropriate CSS file based on deceased status
     addCssLink(isDeceased);
 
-
+                    // Set up display variables
                     const statusClass = isDeceased ? 'dead' : 'alive';
                     const imgId = isDeceased ? 'dead' : 'alive';
                     const imgAlt = isDeceased ? 'picture representing death' : 'picture representing life';
                     const status  = isDeceased ? 'DEAD' : 'not dead yet';
 
-
-
-
-
-
+                    // Build the HTML content to display
                     let htmlContent = `
                         <div id="status" class="${statusClass}">
-                            <p class="status"><a href="https://www.wikidata.org/wiki/${personId}" class="status" target="_blank">${personLabel}</a> is ${status}</p>
+                            <p class="status"><a href="${personLink}" class="status" target="_blank">${personLabel}</a> is ${status}</p>
                             <!--<p><strong>Date of Birth:</strong> ${formattedDOB}</p>
                             <p><strong>Date of Death:</strong> ${formattedDOD}</p>
                             <p><strong>Gender:</strong> ${gender}</p>-->
@@ -113,11 +153,9 @@ function fetchDetails(personId) {
                         </div>
                     `;
 
-
-                    // Check if the personId is in the special list
+                    // Check if this person has special additional content
 if (specialPersonIds.includes(personId)) {
     const additionalContentUrl = `people/${personId}.html`; // Path to your HTML files
-
 
     // Fetch the additional HTML content
     fetch(additionalContentUrl)
@@ -125,7 +163,6 @@ if (specialPersonIds.includes(personId)) {
         .then(additionalContent => {
             // Insert the additional content after the specific paragraph and before the image
             htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
-
 
             document.getElementById('person-info').innerHTML = htmlContent;
         })
@@ -138,7 +175,6 @@ if (specialPersonIds.includes(personId)) {
     // If not in the special list, just display the original content
     document.getElementById('person-info').innerHTML = htmlContent;
 }
-
 
                 } else {
                     document.getElementById('person-info').innerHTML = "<p>No details found.</p>";
@@ -159,22 +195,24 @@ if (specialPersonIds.includes(personId)) {
 }
 
 
+/**
+ * Dynamically adds the appropriate CSS file (dead.css or alive.css) to the page
+ * Removes any previously added custom stylesheet first to avoid conflicts
+ * @param {boolean} isDeceased - True if person is deceased, false if alive
+ */
 function addCssLink(isDeceased) {
     const head = document.head;
     const link = document.createElement('link');
 
-
     link.type = 'text/css';
     link.rel = 'stylesheet';
     link.href = isDeceased ? 'css/dead.css' : 'css/alive.css';
-
 
     // Remove existing custom stylesheet if present
     const existingLink = document.querySelector('link[rel=stylesheet][data-custom-style]');
     if (existingLink) {
         head.removeChild(existingLink);
     }
-
 
     // Add the new stylesheet
     link.setAttribute('data-custom-style', ''); // Mark this link for easy identification
@@ -184,30 +222,42 @@ function addCssLink(isDeceased) {
 
 
 
+/**
+ * Handles the autocomplete search functionality
+ * Triggers when user types in the search box (minimum 3 characters)
+ * Uses JSONP to fetch search suggestions from Wikidata API
+ */
 function autocompleteSearch() {
     const name = document.getElementById('search-box').value;
+    
+    // Only search if at least 3 characters have been entered
     if (name.length < 3) {
         document.getElementById('suggestions').style.display = 'none';
         return;
     }
 
-
+    // Create a script tag for JSONP request to Wikidata API
     const script = document.createElement('script');
     script.src = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&uselang=en&type=item&continue=0&limit=10&callback=handleAutocompleteResponse`;
     document.head.appendChild(script);
     document.head.removeChild(script);
     
-        // Remove active class from any previously highlighted item
+    // Remove active class from any previously highlighted item
     const activeItem = document.querySelector('.suggestion-item.active');
     if (activeItem) {
         activeItem.classList.remove('active');
     }
-    // end Remove active class from any previously highlighted item
 }
 
 
 
 
+/**
+ * Callback function that processes autocomplete search results from Wikidata
+ * Filters results to only show entities with a date of birth (real people)
+ * Creates clickable suggestion items for each result
+ * @param {Object} response - JSON response from Wikidata search API
+ */
 function handleAutocompleteResponse(response) {
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = '';
@@ -216,10 +266,11 @@ function handleAutocompleteResponse(response) {
     const allItems = response.search;
     const ids = allItems.map(item => item.id);
 
+    // Filter to only include entities with a date of birth
     getEntitiesWithDOB(ids).then(validIds => {
         const filteredItems = allItems.filter(item => validIds.includes(item.id));
 
-        // Deduplicate by ID
+        // Deduplicate by ID to avoid showing the same person multiple times
         const uniqueItems = Array.from(
             new Map(filteredItems.map(item => [item.id, item])).values()
         );
@@ -229,10 +280,12 @@ function handleAutocompleteResponse(response) {
             return;
         }
 
+        // Create a clickable suggestion item for each result
         uniqueItems.forEach(item => {
             let displayText = item.label;
             if (item.description) {
-                const descriptionWithoutDeathDate = item.description.replace(/[-–]\d{4}/, '');
+                // Remove death date (if present) from description for cleaner display
+                const descriptionWithoutDeathDate = item.description.replace(/[-–—]\d{4}/, '');
                 displayText += ` - ${descriptionWithoutDeathDate}`;
             }
 
@@ -241,6 +294,7 @@ function handleAutocompleteResponse(response) {
             div.setAttribute('data-id', item.id);
             div.textContent = displayText;
 
+            // Add click handler to fetch details when suggestion is clicked
             div.addEventListener('click', function () {
                 const personId = this.getAttribute('data-id');
                 fetchDetails(personId);
@@ -253,7 +307,10 @@ function handleAutocompleteResponse(response) {
 }
 
 
+// Event listener: trigger autocomplete search when user types in search box
 document.getElementById('search-box').addEventListener('input', autocompleteSearch);
+
+// Event listener: handle selection from suggestions dropdown (legacy support)
 document.getElementById('suggestions').addEventListener('change', function() {
     const personId = this.value;
     fetchDetails(personId);
@@ -261,13 +318,16 @@ document.getElementById('suggestions').addEventListener('change', function() {
 });
 
 
-// additional
+// ===== DOM MANIPULATION FUNCTIONS =====
 
-
+/**
+ * Runs when the page first loads
+ * Checks if person-info div has any content with classes and removes 'atdy' class if so
+ * This helps with styling/layout adjustments
+ */
 document.addEventListener('DOMContentLoaded', function() {
     var personInfo = document.getElementById('person-info');
     var childDivs = personInfo.getElementsByTagName('div');
-
 
     // Check each child div for a class
     for (var i = 0; i < childDivs.length; i++) {
@@ -283,21 +343,28 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-// listening for keyboard interactions on the search box
+// ===== KEYBOARD NAVIGATION =====
+
+// Event listener: handle keyboard navigation in search box
 document.getElementById('search-box').addEventListener('keydown', function(event) {
     handleKeyPress(event);
 });
 
 
-// handle key press
+/**
+ * Handles keyboard navigation through autocomplete suggestions
+ * Arrow Up/Down: navigate through suggestions
+ * Enter: select highlighted suggestion
+ * @param {Event} event - The keyboard event
+ */
 function handleKeyPress(event) {
     const suggestionsContainer = document.getElementById('suggestions');
     const activeItem = document.querySelector('.suggestion-item.active');
     let newActiveItem;
 
-
     switch (event.key) {
         case 'ArrowDown':
+            // Move to next suggestion, or wrap to first if at end
             if (activeItem) {
                 newActiveItem = activeItem.nextElementSibling || suggestionsContainer.firstElementChild;
             } else {
@@ -305,8 +372,8 @@ function handleKeyPress(event) {
             }
             break;
 
-
         case 'ArrowUp':
+            // Move to previous suggestion, or wrap to last if at beginning
             if (activeItem) {
                 newActiveItem = activeItem.previousElementSibling || suggestionsContainer.lastElementChild;
             } else {
@@ -314,8 +381,8 @@ function handleKeyPress(event) {
             }
             break;
 
-
         case 'Enter':
+            // Select the currently highlighted suggestion
             if (activeItem) {
                 activeItem.click();
                 suggestionsContainer.style.display = 'none'; // Hide the suggestions list
@@ -325,8 +392,7 @@ function handleKeyPress(event) {
             break;
     }
 
-
-    // Update the active item
+    // Update the active item highlight
     if (newActiveItem) {
         if (activeItem) {
             activeItem.classList.remove('active');
@@ -339,9 +405,13 @@ function handleKeyPress(event) {
 
 
 
-// more
+// ===== MUTATION OBSERVER =====
 
-
+/**
+ * MutationObserver that watches for changes to the person-info div
+ * When new content is added, it removes the 'atdy' class if needed
+ * This ensures proper styling when person details are displayed
+ */
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.type === 'childList') {
@@ -356,9 +426,8 @@ var observer = new MutationObserver(function(mutations) {
     });
 });
 
-
+// Start observing the person-info element for changes
 var targetNode = document.getElementById('person-info');
 var config = { childList: true };
-
 
 observer.observe(targetNode, config);
