@@ -391,11 +391,14 @@ async function handleAutocompleteResponse(response) {
     // Build a set of IDs already in direct matches to avoid duplicates
     const directIds = new Set(uniqueDirectItems.map(item => item.id));
 
-    // Deduplicate group member results, excluding anyone already in direct matches
+    // Deduplicate group member results, excluding anyone already in direct matches.
+    // Also filter out entries whose label is a raw Wikidata Q-ID (e.g. "Q192936"),
+    // which happens when Wikidata has no English label for that entity.
     const uniqueMemberItems = Array.from(
         new Map(
             memberResults
                 .filter(m => !directIds.has(m.id))
+                .filter(m => !/^Q\d+$/.test(m.label))
                 .map(m => [m.id, m])
         ).values()
     );
