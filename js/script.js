@@ -61,6 +61,102 @@ function getEntitiesWithDOB(ids) {
 }
 
 /**
+ * Queries Wikidata for members of groups (bands, films, TV shows, sports teams, etc.)
+ * Uses P527 (has part) for bands/ensembles/teams and P161 (cast member) for films/TV shows
+ * Only returns members who have a date of birth (i.e. real people)
+ * @param {Array} ids - Array of Wikidata IDs to check for group membership
+ * @returns {Promise<Array>} Promise resolving to array of { id, label, groupLabel } objects
+ */
+function getMembersOfGroups(allItems) {
+    if (allItems.length === 0) return Promise.resolve([]);
+
+    const makeValuesClause = arr => arr.map(id => `wd:${id}`).join(' ');
+
+    // Map each item ID to its search rank (lower index = more relevant)
+    const groupRank = new Map(allItems.map((item, index) => [item.id, index]));
+
+    // Deduplicates member results by member ID, keeping the entry whose source group
+    // ranked highest (lowest index) in the original search results
+    function dedupeByBestGroup(results) {
+        const memberMap = new Map();
+        results.forEach(result => {
+            const existing = memberMap.get(result.id);
+            const currentRank = groupRank.get(result.groupId) ?? Infinity;
+            const existingRank = existing ? (groupRank.get(existing.groupId) ?? Infinity) : Infinity;
+            if (!existing || currentRank < existingRank) {
+                memberMap.set(result.id, result);
+            }
+        });
+        return Array.from(memberMap.values()).map(({ id, label, groupLabel }) => ({ id, label, groupLabel }));
+    }
+
+    // Parse SPARQL bindings into member result objects
+    function parseMembers(bindings) {
+        return bindings.map(binding => ({
+            id: binding.member.value.split('/').pop(),
+            label: binding.memberLabel ? binding.memberLabel.value : '',
+            groupLabel: binding.groupLabel ? binding.groupLabel.value : '',
+            groupId: binding.group.value.split('/').pop()
+        }));
+    }
+
+    // Fetch a SPARQL query, returning an empty result set on any error
+    function fetchSparql(query) {
+        return fetch(endpoint + "?query=" + encodeURIComponent(query) + "&format=json")
+            .then(response => response.json())
+            .catch(() => ({ results: { bindings: [] } }));
+    }
+
+    // Filter out music recordings (albums, songs, EPs, etc.) from P527 candidates.
+    // Their descriptions from wbsearchentities are already available — no extra query needed.
+    // This stops album entities like "Led Zeppelin IV" from returning band members
+    // and labelling them "(Led Zeppelin IV)" instead of "(Led Zeppelin)".
+    const albumPattern = /\b(album|song|single|EP|extended play|recording|compilation)\b/i;
+    const p527Ids = allItems
+        .filter(item => !item.description || !albumPattern.test(item.description))
+        .map(item => item.id);
+
+    const allIds = allItems.map(item => item.id);
+
+    const p527Query = p527Ids.length === 0 ? null : `
+    SELECT DISTINCT ?member ?memberLabel ?group ?groupLabel WHERE {
+        VALUES ?group { ${makeValuesClause(p527Ids)} }
+        ?group wdt:P527 ?member.
+        ?member wdt:P569 ?dob.
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    }
+    LIMIT 50`;
+
+    const p527Promise = p527Query
+        ? fetchSparql(p527Query).then(data => parseMembers(data.results.bindings))
+        : Promise.resolve([]);
+
+    return p527Promise.then(p527Results => {
+        // If any P527 members were found, return them exclusively.
+        // Do NOT fall back to P161 — this prevents a band search (e.g. "Pink Floyd")
+        // from also showing cast members of an associated film ("The Wall")
+        // that happens to appear in the same search results.
+        if (p527Results.length > 0) {
+            return dedupeByBestGroup(p527Results);
+        }
+
+        // No P527 members found — try P161 (film/TV cast) for all items
+        const p161Query = `
+        SELECT DISTINCT ?member ?memberLabel ?group ?groupLabel WHERE {
+            VALUES ?group { ${makeValuesClause(allIds)} }
+            ?group wdt:P161 ?member.
+            ?member wdt:P569 ?dob.
+            SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        }
+        LIMIT 50`;
+
+        return fetchSparql(p161Query)
+            .then(data => dedupeByBestGroup(parseMembers(data.results.bindings)));
+    }).catch(() => []);
+}
+
+
+/**
  * Formats an ISO date string to DD/MM/YYYY format
  * @param {string} dateString - ISO format date string
  * @returns {string} Formatted date string (DD/MM/YYYY)
@@ -252,13 +348,24 @@ function autocompleteSearch() {
 
 
 
+// Incremented each time handleAutocompleteResponse is invoked.
+// Used to discard results from earlier in-flight calls when the user
+// has continued typing, preventing duplicate entries in the dropdown.
+let autocompleteVersion = 0;
+
 /**
  * Callback function that processes autocomplete search results from Wikidata
- * Filters results to only show entities with a date of birth (real people)
+ * Filters results to only show entities with a date of birth (real people),
+ * and also expands group entities (bands, films, sports teams, etc.) into their
+ * members/cast by querying P527 and P161 in parallel for better performance
  * Creates clickable suggestion items for each result
  * @param {Object} response - JSON response from Wikidata search API
  */
-function handleAutocompleteResponse(response) {
+async function handleAutocompleteResponse(response) {
+    // Capture this call's version number. If a newer call starts while we are
+    // awaiting SPARQL results, we discard our results to avoid duplicate entries.
+    const myVersion = ++autocompleteVersion;
+
     const suggestionsElement = document.getElementById('suggestions');
     suggestionsElement.innerHTML = '';
     suggestionsElement.style.display = 'block';
@@ -266,43 +373,70 @@ function handleAutocompleteResponse(response) {
     const allItems = response.search;
     const ids = allItems.map(item => item.id);
 
-    // Filter to only include entities with a date of birth
-    getEntitiesWithDOB(ids).then(validIds => {
-        const filteredItems = allItems.filter(item => validIds.includes(item.id));
+    // Run both queries in parallel: DOB check for direct people, and member lookup for groups.
+    // Pass allItems (not just ids) so getMembersOfGroups can use descriptions to filter albums.
+    const [validIds, memberResults] = await Promise.all([
+        getEntitiesWithDOB(ids),
+        getMembersOfGroups(allItems)
+    ]);
 
-        // Deduplicate by ID to avoid showing the same person multiple times
-        const uniqueItems = Array.from(
-            new Map(filteredItems.map(item => [item.id, item])).values()
-        );
+    // Direct person matches (existing behaviour)
+    const filteredItems = allItems.filter(item => validIds.includes(item.id));
 
-        if (uniqueItems.length === 0) {
-            suggestionsElement.innerHTML = '<div class="suggestion-item">No living entities found.</div>';
-            return;
+    // Deduplicate direct matches by ID
+    const uniqueDirectItems = Array.from(
+        new Map(filteredItems.map(item => [item.id, item])).values()
+    );
+
+    // Build a set of IDs already in direct matches to avoid duplicates
+    const directIds = new Set(uniqueDirectItems.map(item => item.id));
+
+    // Deduplicate group member results, excluding anyone already in direct matches
+    const uniqueMemberItems = Array.from(
+        new Map(
+            memberResults
+                .filter(m => !directIds.has(m.id))
+                .map(m => [m.id, m])
+        ).values()
+    );
+
+    // Combine: direct person matches first, then group members
+    const allDisplayItems = [...uniqueDirectItems, ...uniqueMemberItems];
+
+    // A newer search has been initiated while we were awaiting — discard these results
+    if (autocompleteVersion !== myVersion) return;
+
+    if (allDisplayItems.length === 0) {
+        suggestionsElement.innerHTML = '<div class="suggestion-item">No results found.</div>';
+        return;
+    }
+
+    // Create a clickable suggestion item for each result
+    allDisplayItems.forEach(item => {
+        let displayText = item.label;
+        if (item.description) {
+            // Remove death date (if present) from description for cleaner display
+            const descriptionWithoutDeathDate = item.description.replace(/[-–—]\d{4}/, '');
+            displayText += ` - ${descriptionWithoutDeathDate}`;
+        }
+        // For group-expanded members, append the group name for context
+        if (item.groupLabel) {
+            displayText += ` (${item.groupLabel})`;
         }
 
-        // Create a clickable suggestion item for each result
-        uniqueItems.forEach(item => {
-            let displayText = item.label;
-            if (item.description) {
-                // Remove death date (if present) from description for cleaner display
-                const descriptionWithoutDeathDate = item.description.replace(/[-–—]\d{4}/, '');
-                displayText += ` - ${descriptionWithoutDeathDate}`;
-            }
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.setAttribute('data-id', item.id);
+        div.textContent = displayText;
 
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.setAttribute('data-id', item.id);
-            div.textContent = displayText;
-
-            // Add click handler to fetch details when suggestion is clicked
-            div.addEventListener('click', function () {
-                const personId = this.getAttribute('data-id');
-                fetchDetails(personId);
-                suggestionsElement.style.display = 'none';
-            });
-
-            suggestionsElement.appendChild(div);
+        // Add click handler to fetch details when suggestion is clicked
+        div.addEventListener('click', function () {
+            const personId = this.getAttribute('data-id');
+            fetchDetails(personId);
+            suggestionsElement.style.display = 'none';
         });
+
+        suggestionsElement.appendChild(div);
     });
 }
 
