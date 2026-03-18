@@ -912,11 +912,23 @@ padding-left: 1rem;
 
 
 .atdy {
-  background-image: url('/img/grim-reaper.webp');
+  background-image: url('/img/grim-reaper-sm.webp');
   background-repeat: no-repeat;
   background-position-x: center;
   min-height: 100vh;
   background-size: contain;
+}
+
+@media (min-width: 550px) {
+  .atdy {
+    background-image: url('/img/grim-reaper-md.webp');
+  }
+}
+
+@media (min-width: 1000px) {
+  .atdy {
+    background-image: url('/img/grim-reaper.webp');
+  }
 }
 
 body {
