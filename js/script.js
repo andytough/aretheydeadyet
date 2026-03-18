@@ -239,6 +239,7 @@ function fetchDetails(personId) {
 
                     // Build the HTML content to display
                     let htmlContent = `
+                        <!-- Wikidata ID: ${personId} -->
                         <div id="status" class="${statusClass}">
                             <p class="status"><a href="${personLink}" class="status" target="_blank">${personLabel}</a> is ${status}</p>
                             <!--<p><strong>Date of Birth:</strong> ${formattedDOB}</p>
