@@ -1022,3 +1022,17 @@ font-size: 8rem;
 .site-footer a:hover {
     color: #999;
 }
+
+.github-link {
+    margin-left: 1.5rem;
+    vertical-align: middle;
+}
+
+.github-link svg {
+    fill: #666;
+    display: block;
+}
+
+.github-link:hover svg {
+    fill: #999;
+}
