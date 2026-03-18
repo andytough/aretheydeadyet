@@ -250,27 +250,20 @@ function fetchDetails(personId) {
                     `;
 
                     // Check if this person has special additional content
-if (specialPersonIds.includes(personId)) {
-    const additionalContentUrl = `people/${personId}.html`; // Path to your HTML files
-
-    // Fetch the additional HTML content
-    fetch(additionalContentUrl)
-        .then(response => response.text())
-        .then(additionalContent => {
-            // Insert the additional content after the specific paragraph and before the image
+fetch(`people/${personId}.html`)
+    .then(response => {
+        if (response.ok) return response.text();
+        return null;
+    })
+    .then(additionalContent => {
+        if (additionalContent) {
             htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
-
-            document.getElementById('person-info').innerHTML = htmlContent;
-        })
-        .catch(error => {
-            console.error('Error fetching additional content:', error);
-            // If there's an error, still display the original content
-            document.getElementById('person-info').innerHTML = htmlContent;
-        });
-} else {
-    // If not in the special list, just display the original content
-    document.getElementById('person-info').innerHTML = htmlContent;
-}
+        }
+        document.getElementById('person-info').innerHTML = htmlContent;
+    })
+    .catch(() => {
+        document.getElementById('person-info').innerHTML = htmlContent;
+    });
 
                 } else {
                     document.getElementById('person-info').innerHTML = "<p>No details found.</p>";
