@@ -994,3 +994,31 @@ font-size: 8rem;
 .suggestion-item.active {
     background-color: #e0e0e0; /* Example styling for active item */
 }
+
+/* Privacy policy content */
+.privacy-content {
+    background-color: white;
+    padding: 3rem;
+    margin-top: 2rem;
+    border-radius: 4px;
+}
+
+.privacy-content h2 {
+    margin-bottom: 0.5rem;
+}
+
+/* Site footer */
+.site-footer {
+    text-align: center;
+    padding: 2rem 0;
+    font-size: 1.2rem;
+}
+
+.site-footer a {
+    color: #666;
+    text-decoration: none;
+}
+
+.site-footer a:hover {
+    color: #999;
+}
