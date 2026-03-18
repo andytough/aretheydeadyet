@@ -1,28 +1,25 @@
 <!DOCTYPE html>
-<html>
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/main.css?v=2">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script>
-  if(navigator.userAgent.indexOf('iPhone') > -1 )
-{
-    document
-      .querySelector("[name=viewport]")
-      .setAttribute("content","width=device-width, initial-scale=1, maximum-scale=1");
-}
-  </script>
-  <!-- Favicon -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="manifest" href="/site.webmanifest">
-  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000">
-  <meta name="msapplication-TileColor" content="#000000">
-  <meta name="theme-color" content="#000000">
-  <!-- Meta OG -->
-  <meta property="og:image" content="img/aretheydeadyet.png">
+<html lang="en">
 <head>
     <title>Are they dead yet?</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/main.css?v=2">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+    if(navigator.userAgent.indexOf('iPhone') > -1) {
+        document.querySelector("[name=viewport]").setAttribute("content","width=device-width, initial-scale=1, maximum-scale=1");
+    }
+    </script>
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="theme-color" content="#000000">
+    <!-- Meta OG -->
+    <meta property="og:image" content="img/aretheydeadyet.png">
 </head>
 
 <body>
@@ -30,22 +27,23 @@
       <div class="row">
         <div class="twelve column heading">
             <div id="header">
-            <a href="index.html">
-            <img class="u-pull-left iconblack" src="img/grim-reaper_icon_black.webp"  />
-            <img class="u-pull-left iconwhite" src="img/grim-reaper_icon_white.webp"  />
-            </a>
-            <h1 class="home u-pull-left"><a href="index.html">Are they dead yet?</a></h1>
-            </div> <!-- end div id header -->            
-                <input type="search" id="search-box" placeholder="Enter a name...">
-                    <div id="suggestions" size="5"></div>
-                        <!--<button id="search-button">Search</button>-->
+                <a href="index.html" aria-label="Home">
+                    <img class="u-pull-left iconblack" src="img/grim-reaper_icon_black.webp" alt="" />
+                    <img class="u-pull-left iconwhite" src="img/grim-reaper_icon_white.webp" alt="" />
+                </a>
+                <h1 class="home u-pull-left"><a href="index.html">Are they dead yet?</a></h1>
+            </div>
+            <input type="search" id="search-box" placeholder="Enter a name...">
+            <div id="suggestions" size="5"></div>
         </div>
-    </div>        
-      <div class="row">
-        <div class="twelve column atdy">
-                    <div id="person-info"></div>
+      </div>
+      <main>
+        <div class="row">
+            <div class="twelve column atdy">
+                <div id="person-info"></div>
             </div>
         </div>
+      </main>
     </div>
 <script src="js/specialPersonIds.js?v=1" defer></script>
 <script src="js/script.js?v=1" defer></script>
