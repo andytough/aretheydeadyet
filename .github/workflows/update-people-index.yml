@@ -1,0 +1,38 @@
+name: Update special persons index
+
+# Runs whenever HTML files in people/ are added, changed or removed on main.
+# Regenerates people/index.json and commits it back to the repo.
+# Works with any hosting provider — no build command needed on the host.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'people/**.html'
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate people/index.json
+        run: node build.js
+
+      - name: Commit updated index.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add people/index.json
+          git diff --staged --quiet || git commit -m "Auto-update people/index.json [skip ci]"
+          git push
