@@ -34,5 +34,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add people/index.json
-          git diff --staged --quiet || git commit -m "Auto-update people/index.json [skip ci]"
+          git diff --staged --quiet || git commit -m "Auto-update people/index.json"
           git push
