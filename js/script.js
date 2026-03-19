@@ -257,7 +257,8 @@ fetch(`people/${personId}.html`)
         return null;
     })
     .then(additionalContent => {
-        if (additionalContent) {
+        // Guard against Cloudflare returning index.html (with status 200) for missing files
+        if (additionalContent && !additionalContent.includes('<!DOCTYPE')) {
             htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
         }
         document.getElementById('person-info').innerHTML = htmlContent;
