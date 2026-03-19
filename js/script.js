@@ -257,8 +257,14 @@ fetch(`people/${personId}.html`)
         return null;
     })
     .then(additionalContent => {
-        // Guard against Cloudflare returning index.html (with status 200) for missing files
-        if (additionalContent && !additionalContent.includes('<!DOCTYPE')) {
+        // Guard against Cloudflare returning index.html (with status 200) for missing files.
+        // A genuine special-person snippet will never contain these full-page markers.
+        const isFullPage = additionalContent && (
+            /<!doctype/i.test(additionalContent) ||
+            /<html[\s>]/i.test(additionalContent) ||
+            /id="search-box"/i.test(additionalContent)
+        );
+        if (additionalContent && !isFullPage) {
             htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
         }
         document.getElementById('person-info').innerHTML = htmlContent;
