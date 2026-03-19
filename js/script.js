@@ -1,6 +1,17 @@
 // Wikidata SPARQL endpoint for querying data
 const endpoint = "https://query.wikidata.org/sparql";
 
+// Cache of special person IDs loaded from people/index.json
+let specialPersonIds = null;
+
+function getSpecialPersonIds() {
+    if (specialPersonIds !== null) return Promise.resolve(specialPersonIds);
+    return fetch('people/index.json')
+        .then(r => r.ok ? r.json() : [])
+        .catch(() => [])
+        .then(ids => { specialPersonIds = ids; return ids; });
+}
+
 /**
  * Generates a SPARQL query to fetch the English label (name) for a person
  * @param {string} personId - The Wikidata ID (e.g., "Q40531")
@@ -250,28 +261,26 @@ function fetchDetails(personId) {
                         </div>
                     `;
 
-                    // Check if this person has special additional content
-fetch(`people/${personId}.html`)
-    .then(response => {
-        if (response.ok) return response.text();
-        return null;
-    })
-    .then(additionalContent => {
-        // Guard against Cloudflare returning index.html (with status 200) for missing files.
-        // A genuine special-person snippet will never contain these full-page markers.
-        const isFullPage = additionalContent && (
-            /<!doctype/i.test(additionalContent) ||
-            /<html[\s>]/i.test(additionalContent) ||
-            /id="search-box"/i.test(additionalContent)
-        );
-        if (additionalContent && !isFullPage) {
-            htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
-        }
+                    // Check if this person has special additional content.
+                    // We look up people/index.json first so we only fetch files we know exist,
+                    // avoiding Cloudflare serving index.html (status 200) for missing files.
+getSpecialPersonIds().then(ids => {
+    if (!ids.includes(personId)) {
         document.getElementById('person-info').innerHTML = htmlContent;
-    })
-    .catch(() => {
-        document.getElementById('person-info').innerHTML = htmlContent;
-    });
+        return;
+    }
+    fetch(`people/${personId}.html`)
+        .then(response => response.ok ? response.text() : null)
+        .then(additionalContent => {
+            if (additionalContent) {
+                htmlContent = htmlContent.replace('<!-- Additional content will be inserted here -->', additionalContent);
+            }
+            document.getElementById('person-info').innerHTML = htmlContent;
+        })
+        .catch(() => {
+            document.getElementById('person-info').innerHTML = htmlContent;
+        });
+});
 
                 } else {
                     document.getElementById('person-info').innerHTML = "<p>No details found.</p>";
